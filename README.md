@@ -39,25 +39,28 @@ pairs  sorted by key. This demands that the type `K` has a `isless` method.
 This  implementation is two  to four times  faster than the  `Dict` one and
 requires half the memory.
 
-Both implementations have the same methods, with some exceptions; they have
-mostly  the  same  methods  as  a  `Dict`  (`haskey`,  `getindex`,  `keys`,
-`values`. `pairs`, `first`, `iterate`, `length`, `eltype`). Adding elements
-is a variation on `merge(+,...)` for `Dict`s where keys with zero value are
-deleted afterwards (here `+` can be replaced by any operation `op` with the
-property  that  `op(0,x)=op(x,0)=x`).  Further,  a  module  element  can be
-negated,  or multiplied or divided (`/`or  `//`) by some element (acting on
-coefficients)  if the method is defined  between type `V` and that element;
-there are also `zero` and `iszero` methods.
+Both  implementations  have  the  same  methods,  which are mostly the same
+methods  as  a  `Dict`  (`haskey`,  `getindex`,  `keys`, `values`. `pairs`,
+`first`,  `iterate`,  `length`,  `eltype`),  with  some  exceptions. Adding
+elements  is implemented as `merge(+,...)` which  is a variation on `merge`
+for  `Dict`s where  keys with  zero value  are deleted  after the operation
+(here  `+` can  be replaced  by any  operation `op`  with the property that
+`op(0,x)=op(x,0)=x`).   
 
-The  exception is that  `ModuleElt`s have methods  `cmp` and `isless` which
-`HModuleElt`s  don't have. There is also `ModuleElts.merge2` which does the
-same as merge but is valid for more general operations.
+A module element can also be negated, or multiplied or divided (`/`or `//`)
+by  some element (acting on coefficients)  if the method is defined between
+type `V` and that element; there are also `zero` and `iszero` methods.
+
+`ModuleElt`s  have  methods  `cmp`  and  `isless` which `HModuleElt`s don't
+have. There is also `ModuleElts.merge2` which does the same as merge but is
+valid  for more  general operations  (I use  it with  `min` and `max` which
+implement `gcd` and `lcm` for `Monomial`s and `CycPol`s).
 
 Here  is an example where basis elements are `Symbol`s and coefficients are
 `Int`. As you can see in the examples, at the REPL (or in Jupyter or Pluto,
 when  `IO`  has  the  `:limit`  attribute)  the  `show`  method  shows  the
 coefficients  (bracketed  if  necessary,  which  is  when  they  have inner
-occurences  of `+-*`), followed  by showing the  basis elements. The `repr`
+occurences  of `+-*/`), followed by showing  the basis elements. The `repr`
 method gives a representation which can be read back in julia:
 
 ```julia-repl
@@ -66,6 +69,9 @@ julia> a=ModuleElt(:xy=>1,:yx=>-1)
 
 julia> repr(a)
 "ModuleElt([:xy => 1, :yx => -1])"
+
+julia> ModuleElt([:xy=>1//2,:yx=>-1])
+(1//2):xy+(-1//1):yx
 ```
 
 Setting  the  `IO`  property  `:showbasis`  to  a  custom printing function

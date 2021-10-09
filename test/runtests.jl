@@ -19,6 +19,7 @@ end
 @testset "ModuleElts" begin
 @test mytest("a=ModuleElt(:xy=>1,:yx=>-1)",":xy-:yx")
 @test mytest("repr(a)","\"ModuleElt([:xy => 1, :yx => -1])\"")
+@test mytest("ModuleElt([:xy=>1//2,:yx=>-1])","(1//2):xy+(-1//1):yx")
 @test mytest("a-a","0")
 @test mytest("a*99","99:xy-99:yx")
 @test mytest("a//2","(1//2):xy+(-1//2):yx")
