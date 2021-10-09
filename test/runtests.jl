@@ -16,8 +16,7 @@ function mytest(a::String,b::String)
   if a!=b print("exec=$(repr(a[i:end]))\nmanl=$(repr(b[i:end]))\n") end
   a==b
 end
-@testset verbose = true "Gapjm" begin
-@testset "README.md" begin
+@testset "ModuleElts" begin
 @test mytest("a=ModuleElt(:xy=>1,:yx=>-1)",":xy-:yx")
 @test mytest("repr(a)","\"ModuleElt([:xy => 1, :yx => -1])\"")
 @test mytest("a-a","0")
@@ -37,5 +36,4 @@ end
 @test mytest("a=ModuleElt(:yy=>1, :yx=>2, :xy=>3, :yy=>-1;check=false)",":yy+2:yx+3:xy-:yy")
 @test mytest("a=ModuleElt(:yy=>1, :yx=>2, :xy=>3, :yy=>-1)","3:xy+2:yx")
 @test mytest("a+ModuleElt([:z=>1.0])","3.0:xy+2.0:yx+1.0:z")
-end
 end

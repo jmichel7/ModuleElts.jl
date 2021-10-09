@@ -1,4 +1,13 @@
 name = "ModuleElts"
 uuid = "4249f315-58d4-4c46-b324-3577fc7dfca0"
 authors = ["Jean Michel <jean.michel@imj-prg.fr>"]
-version = "0.1.0"
+version = "0.0.1"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
