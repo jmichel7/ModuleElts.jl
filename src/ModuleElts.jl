@@ -316,13 +316,13 @@ end
 It returns zero if the key does not occur in `x`.
 """
 function Base.getindex(x::ModuleElt{K,V},i) where {K,V}
-  r=searchsortedfirst(x.d,i;by=first)
+  r=searchsortedfirst(x.d,i=>zero(V);by=first)
   if r>length(x.d) || first(x.d[r])!=i return zero(V) end
   last(x.d[r])
 end
 
 function Base.haskey(x::ModuleElt,i)
-  r=searchsortedfirst(x.d,i;by=first)
+  r=searchsortedfirst(x.d,i=>zero(V);by=first)
   r<=length(x.d) && first(x.d[r])==i
 end
 
