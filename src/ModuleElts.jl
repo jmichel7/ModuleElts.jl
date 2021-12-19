@@ -316,13 +316,14 @@ end
 It returns zero if the key does not occur in `x`.
 """
 function Base.getindex(x::ModuleElt{K,V},i) where {K,V}
-  r=searchsorted(x.d,Ref(i);by=first)
-  r.start==r.stop ? last(x.d[r.start]) : zero(V)
+  r=searchsortedfirst(x.d,i;by=first)
+  if r>length(x.d) || first(x.d[r])!=i return zero(V) end
+  last(x.d[r])
 end
 
 function Base.haskey(x::ModuleElt,i)
-  r=searchsorted(x.d,Ref(i);by=first)
-  r.start==r.stop
+  r=searchsortedfirst(x.d,i;by=first)
+  r<=length(x.d) && first(x.d[r])==i
 end
 
 @inline Base.pairs(x::ModuleElt)=x.d
