@@ -4,7 +4,8 @@ A  `ModuleElt{K,V}`  represents  an  element  of  a free module where basis
 elements  are of type  `K` and coefficients  of type `V`.  Usually you want
 objects  of type `V` to be elements of  a ring, but it could also be useful
 if  they just belong to  an abelian group. This  is similar to the SageMath
-CombinatorialFreeModule.
+CombinatorialFreeModule.  You can  also see  them as  `SparseVector`s where
+keys can be type `K` instead of integers.
 
 This  basic  data  structure  is  used  in  my  packages  as  an  efficient
 representation   at  many   places.  For   example,  the   `Monomial`  type
@@ -40,12 +41,12 @@ This  implementation is two  to four times  faster than the  `Dict` one and
 requires half the memory.
 
 Both  implementations  have  the  same  methods,  which are mostly the same
-methods  as  a  `Dict`  (`haskey`,  `getindex`,  `keys`, `values`. `pairs`,
-`first`,  `iterate`,  `length`,  `eltype`),  with  some  exceptions. Adding
-elements  is implemented as `merge(+,...)` which  is a variation on `merge`
-for  `Dict`s where  keys with  zero value  are deleted  after the operation
-(here  `+` can  be replaced  by any  operation `op`  with the property that
-`op(0,x)=op(x,0)=x`).   
+methods  as a  `Dict` (`haskey`,  `getindex`, `setindex`, `keys`, `values`.
+`pairs`,  `first`,  `iterate`,  `length`,  `eltype`), with some exceptions.
+Adding  elements is implemented  as `merge(+,...)` which  is a variation on
+`merge`  for  `Dict`s  where  keys  with  zero  value are deleted after the
+operation (here `+` can be replaced by any operation `op` with the property
+that `op(0,x)=op(x,0)=x`).
 
 A module element can also be negated, or multiplied or divided (`/`or `//`)
 by  some element (acting on coefficients)  if the method is defined between

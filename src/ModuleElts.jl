@@ -42,12 +42,12 @@ This  implementation is two  to four times  faster than the  `Dict` one and
 requires half the memory.
 
 Both  implementations  have  the  same  methods,  which are mostly the same
-methods  as  a  `Dict`  (`haskey`,  `getindex`,  `keys`, `values`. `pairs`,
-`first`,  `iterate`,  `length`,  `eltype`),  with  some  exceptions. Adding
-elements  is implemented as `merge(+,...)` which  is a variation on `merge`
-for  `Dict`s where  keys with  zero value  are deleted  after the operation
-(here  `+` can  be replaced  by any  operation `op`  with the property that
-`op(0,x)=op(x,0)=x`).   
+methods  as a  `Dict` (`haskey`,  `getindex`, `setindex`, `keys`, `values`.
+`pairs`,  `first`,  `iterate`,  `length`,  `eltype`), with some exceptions.
+Adding  elements is implemented  as `merge(+,...)` which  is a variation on
+`merge`  for  `Dict`s  where  keys  with  zero  value are deleted after the
+operation (here `+` can be replaced by any operation `op` with the property
+that `op(0,x)=op(x,0)=x`).
 
 A module element can also be negated, or multiplied or divided (`/`or `//`)
 by  some element (acting on coefficients)  if the method is defined between
@@ -190,6 +190,8 @@ Base.keys(x::HModuleElt)=keys(x.d)
 Base.values(x::HModuleElt)=values(x.d)
 
 Base.getindex(x::HModuleElt{K,V},i) where{K,V}=haskey(x,i) ?  x.d[i] : zero(V)
+Base.setindex!(x::HModuleElt{K,V},v,i) where{K,V}=
+  if iszero(v) delete!(x.d,v) else x.d[i]=v end
 
 # Valid for ops such that op(0,x)=x otherwise the result is wrong.
 Base.merge(op::Function,a::HModuleElt,b::HModuleElt)=HModuleElt(merge(op,a.d,b.d))
@@ -312,13 +314,27 @@ function merge2(op::Function,a::ModuleElt,b::ModuleElt)
 end
 
 """
-`getindex(x::ModuleElt,i)` returns the value associated to key `i` in `x`.
-It returns zero if the key does not occur in `x`.
+`getindex(x::ModuleElt,key)`  returns  the  value  associated  to the given
+`key` in `x`. It returns zero if the key does not occur in `x`.
 """
 function Base.getindex(x::ModuleElt{K,V},i) where {K,V}
   r=searchsortedfirst(x.d,i=>zero(V);by=first)
   if r>length(x.d) || first(x.d[r])!=i return zero(V) end
   last(x.d[r])
+end
+
+"""
+`setindex!(x::ModuleElt,v,key)`  sets `v`  as the  value associated  to the
+given `key` in `x`. Setting a value to zero or adding a new key is expensive.
+"""
+function Base.setindex!(x::ModuleElt{K,V},v,key) where {K,V}
+  r=searchsortedfirst(x.d,key=>zero(V);by=first)
+  if r>length(x.d) || first(x.d[r])!=key 
+    if !iszero(v) splice!(x.d,r:r-1,[key=>v]) end
+  elseif iszero(v) deleteat!(x.d,r)
+  else x.d[r]=key=>v
+  end
+  v
 end
 
 function Base.haskey(x::ModuleElt,i)
