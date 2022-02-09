@@ -196,6 +196,7 @@ Base.setindex!(x::HModuleElt{K,V},v,i) where{K,V}=
 # Valid for ops such that op(0,x)=x otherwise the result is wrong.
 Base.merge(op::Function,a::HModuleElt,b::HModuleElt)=HModuleElt(merge(op,a.d,b.d))
 
+@inline Base.:-(a::HModuleElt,b::HModuleElt)=a+(-b) # since merge2 not available
 #-------------- faster implementation -------------------------------------
 """
 `ModuleElt{K,V}`  has a  similar interface  to `Dict{K,V}`,  but instead of
@@ -313,6 +314,8 @@ function merge2(op::Function,a::ModuleElt,b::ModuleElt)
   ModuleElt(resize!(res,ri);check=false)
 end
 
+Base.:-(a::ModuleElt,b::ModuleElt)=merge2(-,a,b) # faster than a+(-b)
+
 """
 `getindex(x::ModuleElt,key)`  returns  the  value  associated  to the given
 `key` in `x`. It returns zero if the key does not occur in `x`.
@@ -325,7 +328,7 @@ end
 
 """
 `setindex!(x::ModuleElt,v,key)`  sets `v`  as the  value associated  to the
-given `key` in `x`. Setting a value to zero or adding a new key is expensive.
+given `key` in `x`. Setting a value to zero or for a new key is expensive.
 """
 function Base.setindex!(x::ModuleElt{K,V},v,key) where {K,V}
   r=searchsortedfirst(x.d,key=>zero(V);by=first)
@@ -396,7 +399,6 @@ for M in (:HModuleElt, :ModuleElt)
 
 @inline Base.:+(a::$M,b::$M)=merge(+,a,b)
 Base.:-(a::$M)=iszero(a) ? a : $M(k=>-v for(k,v) in a;check=false)
-@inline Base.:-(a::$M,b::$M)=a+(-b)
 
 # multiply module element by scalar
 function Base.:*(a::$M{K,V},b)where {K,V}
