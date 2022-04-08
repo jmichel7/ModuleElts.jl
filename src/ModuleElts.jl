@@ -340,7 +340,7 @@ function Base.setindex!(x::ModuleElt{K,V},v,key) where {K,V}
   v
 end
 
-function Base.haskey(x::ModuleElt,i)
+function Base.haskey(x::ModuleElt{K,V},i) where {K,V}
   r=searchsortedfirst(x.d,i=>zero(V);by=first)
   r<=length(x.d) && first(x.d[r])==i
 end
