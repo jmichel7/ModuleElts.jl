@@ -17,7 +17,7 @@ representing multivariate monomials is a `ModuleElt{Symbol,Int}`:
 And  multivariate polynomials are  represented by a `ModuleElt{Monomial,C}`
 where `C` is the type of the coefficients:
 
-`x*y-z^2` is represented by ``ModuleElt(x*y=>1,z^2=>-1)
+`x*y-z^2` is represented by `ModuleElt(x*y=>1,z^2=>-1)`
 
 `ModuleElts`  are  also  used  for  cyclotomics, CycPols, elements of Hecke
 algebras, etc…
@@ -36,18 +36,20 @@ the  only difference is weeding  out keys which have  a zero cofficient ---
 which  is necessary since for testing equality of module elements one needs
 a canonical form for each element.
 
--  a faster implementation  `ModuleElt` is obtained  by keeping the list of
-pairs  sorted by key. This demands that the type `K` has a `isless` method.
-This  implementation is two  to four times  faster than the  `Dict` one and
-requires half the memory.
+  - `ModuleElt`, a faster implementation which keeps a list of pairs sorted
+    by key.
+
+This  demands that the type `K`  has a `isless` method. This implementation
+is  two to  four times  faster than  the `Dict`  one and  requires half the
+memory.
 
 Both  implementations  have  the  same  methods,  which are mostly the same
 methods  as a  `Dict` (`haskey`,  `getindex`, `setindex`, `keys`, `values`.
-`pairs`,  `first`,  `iterate`,  `length`,  `eltype`), with some exceptions.
-Adding  elements is implemented  as `merge(+,...)` which  is a variation on
-`merge`  for  `Dict`s  where  keys  with  zero  value are deleted after the
-operation (here `+` can be replaced by any operation `op` with the property
-that `op(0,x)=op(x,0)=x`).
+`pairs`,   `first`,  `iterate`,  `length`,  `eltype`,  `copy`),  with  some
+exceptions.  Adding elements  is implemented  as `merge(+,...)`  which is a
+variation  on `merge`  for `Dict`s  where keys  with zero value are deleted
+after  the operation (here `+`  can be replaced by  any operation `op` with
+the property that `op(0,x)=op(x,0)=x`).
 
 A module element can also be negated, or multiplied or divided (`/`or `//`)
 by  some element (acting on coefficients)  if the method is defined between
@@ -193,10 +195,11 @@ Base.getindex(x::HModuleElt{K,V},i) where{K,V}=haskey(x,i) ?  x.d[i] : zero(V)
 Base.setindex!(x::HModuleElt{K,V},v,i) where{K,V}=
   if iszero(v) delete!(x.d,v) else x.d[i]=v end
 
-# Valid for ops such that op(0,x)=x otherwise the result is wrong.
+# Valid for ops such that op(0,x)=op(x,0)=x otherwise the result is wrong.
 Base.merge(op::Function,a::HModuleElt,b::HModuleElt)=HModuleElt(merge(op,a.d,b.d))
 
-@inline Base.:-(a::HModuleElt,b::HModuleElt)=a+(-b) # since merge2 not available
+# since merge2 not implemented
+Base.:-(a::HModuleElt,b::HModuleElt)=a+(-b) 
 #-------------- faster implementation -------------------------------------
 """
 `ModuleElt{K,V}`  has a  similar interface  to `Dict{K,V}`,  but instead of
@@ -233,8 +236,8 @@ function normalize!(d::Vector{<:Pair})
   resize!(d,iszero(vi) ? i-1 : i)
 end
 
-@inline Base.cmp(x::ModuleElt,y::ModuleElt)=cmp(x.d,y.d)
-@inline Base.isless(x::ModuleElt,y::ModuleElt)=cmp(x,y)==-1
+Base.cmp(x::ModuleElt,y::ModuleElt)=cmp(x.d,y.d)
+Base.isless(x::ModuleElt,y::ModuleElt)=cmp(x,y)==-1
 
 """
 `merge(op::Function,a::ModuleElt,b::ModuleElt)`
@@ -345,7 +348,7 @@ function Base.haskey(x::ModuleElt{K,V},i) where {K,V}
   r<=length(x.d) && first(x.d[r])==i
 end
 
-@inline Base.pairs(x::ModuleElt)=x.d
+Base.pairs(x::ModuleElt)=x.d
 Base.keys(x::ModuleElt)=(first(p) for p in x.d)
 Base.values(x::ModuleElt)=(last(p) for p in x.d)
 
@@ -361,8 +364,9 @@ function format_coefficient(c::String)
 end
 
 #-------------- methods which have same code in both implementations-------
+
 # we assume that converting the keys from K to K1 does not change hashing
-# for the Dict implementation or sorting for the other implementation
+# for the Dict implementation or sorting for the ModuleElt implementation
 function Base.convert(::Type{ModuleElt{K,V}},a::ModuleElt{K1,V1}) where {K,K1,V,V1}
   if K==K1
     if V==V1 a
@@ -394,10 +398,10 @@ end
 
 for M in (:HModuleElt, :ModuleElt)
   @eval begin
-@inline $M(x::Pair...;u...)=$M(collect(x);u...)
-@inline $M(x::Base.Generator;u...)=$M(collect(x);u...)
+$M(x::Pair...;u...)=$M(collect(x);u...)
+$M(x::Base.Generator;u...)=$M(collect(x);u...)
 
-@inline Base.:+(a::$M,b::$M)=merge(+,a,b)
+Base.:+(a::$M,b::$M)=merge(+,a,b)
 Base.:-(a::$M)=iszero(a) ? a : $M(k=>-v for(k,v) in a;check=false)
 
 # multiply module element by scalar
@@ -410,16 +414,17 @@ function Base.:*(a::$M{K,V},b)where {K,V}
   end
 end
 
-@inline Base.iszero(x::$M)=isempty(x.d)
+Base.iszero(x::$M)=isempty(x.d)
 Base.zero(x::$M)=$M(empty(x.d))
 Base.zero(::Type{$M{K,V}}) where{K,V}=$M(Pair{K,V}[])
 # forwarded methods
-@inline Base.:(==)(a::$M,b::$M)=a.d==b.d
-@inline Base.first(x::$M)=first(x.d)
-@inline Base.iterate(x::$M,y...)=iterate(x.d,y...)
-@inline Base.length(x::$M)=length(x.d)
-@inline Base.eltype(x::$M)=eltype(x.d)
-@inline Base.hash(x::$M, h::UInt)=hash(x.d,h)
+Base.:(==)(a::$M,b::$M)=a.d==b.d
+Base.first(x::$M)=first(x.d)
+Base.iterate(x::$M,y...)=iterate(x.d,y...)
+Base.length(x::$M)=length(x.d)
+Base.eltype(x::$M)=eltype(x.d)
+Base.hash(x::$M, h::UInt)=hash(x.d,h)
+Base.copy(x::$M)=$M(copy(x.d);check=false)
 
 function Base.promote_rule(a::Type{$M{K1,V1}},
                            b::Type{$M{K2,V2}})where {K1,K2,V1,V2}
