@@ -455,14 +455,20 @@ function Base.show(io::IO,m::$M)
   print(io,res)
 end
 
-function Base.merge(f,m::$M{K,V},b;check=true)where {K,V}
-  let b=b, f=f
-    $M(k=>f(v,b) for (k,v) in m;check)
-  end
+"""
+`merge(f,m::ModuleElt,b)` does `v->f(v,b)` on the values of `m`.
+"""
+function Base.merge(f,m::$M{K,V},b)where {K,V}
+  p=(k=>f(v,b) for (k,v) in m)
+  $M(p;check=any(x->iszero(last(x)),p))
 end
 
-function Base.merge(f,m::$M;check=true)
-  $M(k=>f(v) for (k,v) in m;check)
+"""
+`merge(f,m::ModuleElt)` does `v->f(v)` on the values of `m`.
+"""
+function Base.merge(f,m::$M)
+  p=(k=>f(v) for (k,v) in m)
+  $M(p;check=any(x->iszero(last(x)),p))
 end
 
 end
