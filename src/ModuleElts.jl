@@ -459,6 +459,8 @@ end
 `merge(f,m::ModuleElt,b)` does `v->f(v,b)` on the values of `m`.
 """
 function Base.merge(f,m::$M{K,V},b)where {K,V}
+# non-usable when iszero(m) and zero(V) not defined
+  if iszero(m) return zero($M{K,typeof(f(zero(V),b))}) end
   p=(k=>f(v,b) for (k,v) in m)
   $M(p;check=any(x->iszero(last(x)),p))
 end
