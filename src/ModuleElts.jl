@@ -420,7 +420,7 @@ Base.zero(::Type{$M{K,V}}) where{K,V}=$M(Pair{K,V}[])
 # forwarded methods
 Base.:(==)(a::$M,b::$M)=a.d==b.d
 Base.first(x::$M)=first(x.d)
-Base.iterate(x::$M,y...)=iterate(x.d,y...)
+@inline Base.iterate(x::$M,y...)=iterate(x.d,y...) # inline make a difference
 Base.length(x::$M)=length(x.d)
 Base.eltype(x::$M)=eltype(x.d)
 Base.hash(x::$M, h::UInt)=hash(x.d,h)
