@@ -82,7 +82,7 @@ Setting  the  `IO`  property  `:showbasis`  to  a  custom printing function
 changes how the basis elements are printed.
 
 ```julia-rep1
-julia> show(IOContext(stdout,:showbasis=>(io,s)->string("<",s,">")),a)
+julia> show(IOContext(stdout,:limit=>true,:showbasis=>(io,s)->string("<",s,">")),a)
 3<xy>+2<yx>
 ```
 We illustrate basic operations on `ModuleElt`s:
@@ -165,7 +165,7 @@ module ModuleElts
 export ModuleElt, HModuleElt # data structure
 
 #------------- implementation with Dicts ----------------------
-struct HModuleElt{K,V}
+struct HModuleElt{K,V} <: AbstractDict{K,V}
   d::Dict{K,V} # the keys K should be hashable
   function HModuleElt(d::Dict{K,V};check::Bool=true)where {K,V}
     if check
@@ -211,7 +211,7 @@ constructor  by  default  checks  sorting,  adds  values with same key, and
 suppresses  keys  with  zero  value.  This  can  be bypassed by the keyword
 `check=false`.
 """
-struct ModuleElt{K,V}
+struct ModuleElt{K,V} <: AbstractDict{K,V}
   d::Vector{Pair{K,V}}
   function ModuleElt(d::AbstractVector{Pair{K,V}};check::Bool=true)where {K,V}
     if check normalize!(d) end
@@ -365,6 +365,8 @@ end
 
 #-------------- methods which have same code in both implementations-------
 
+# I get an error "M not defined" if I put next routine on following loop
+
 # we assume that converting the keys from K to K1 does not change hashing
 # for the Dict implementation or sorting for the ModuleElt implementation
 function Base.convert(::Type{ModuleElt{K,V}},a::ModuleElt{K1,V1}) where {K,K1,V,V1}
@@ -381,7 +383,6 @@ function Base.convert(::Type{ModuleElt{K,V}},a::ModuleElt{K1,V1}) where {K,K1,V,
   end
 end
 
-# I get a bug when putting this routine in the next loop. So here duplicated
 function Base.convert(::Type{HModuleElt{K,V}},a::HModuleElt{K1,V1}) where {K,K1,V,V1}
   if K==K1
     if V==V1 a
@@ -398,6 +399,7 @@ end
 
 for M in (:HModuleElt, :ModuleElt)
   @eval begin
+
 $M(x::Pair...;u...)=$M(collect(x);u...)
 $M(x::Base.Generator;u...)=$M(collect(x);u...)
 
@@ -419,10 +421,8 @@ Base.zero(x::$M)=$M(empty(x.d))
 Base.zero(::Type{$M{K,V}}) where{K,V}=$M(Pair{K,V}[])
 # forwarded methods
 Base.:(==)(a::$M,b::$M)=a.d==b.d
-Base.first(x::$M)=first(x.d)
 @inline Base.iterate(x::$M,y...)=iterate(x.d,y...) # inline make a difference
 Base.length(x::$M)=length(x.d)
-Base.eltype(x::$M)=eltype(x.d)
 Base.hash(x::$M, h::UInt)=hash(x.d,h)
 Base.copy(x::$M)=$M(copy(x.d);check=false)
 
@@ -430,6 +430,8 @@ function Base.promote_rule(a::Type{$M{K1,V1}},
                            b::Type{$M{K2,V2}})where {K1,K2,V1,V2}
   $M{promote_type(K1,K2),promote_type(V1,V2)}
 end
+
+Base.show(io::IO, ::MIME"text/plain", m::$M)=show(io,m)
 
 function Base.show(io::IO,m::$M)
   if !(get(io,:limit,false) || get(io,:TeX,false))
@@ -468,7 +470,7 @@ end
 """
 `merge(f,m::ModuleElt)` does `v->f(v)` on the values of `m`.
 """
-function Base.merge(f,m::$M)
+function Base.merge(f::Function,m::$M)
   p=(k=>f(v) for (k,v) in m)
   $M(p;check=any(x->iszero(last(x)),p))
 end
