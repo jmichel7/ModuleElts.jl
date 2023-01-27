@@ -1,7 +1,7 @@
 name = "ModuleElts"
 uuid = "4249f315-58d4-4c46-b324-3577fc7dfca0"
 authors = ["Jean Michel <jean.michel@imj-prg.fr>"]
-version = "0.0.9"
+version = "0.1.0"
 
 [compat]
 julia = "1"

@@ -192,8 +192,10 @@ Base.keys(x::HModuleElt)=keys(x.d)
 Base.values(x::HModuleElt)=values(x.d)
 
 Base.getindex(x::HModuleElt{K,V},i) where{K,V}=haskey(x,i) ?  x.d[i] : zero(V)
-Base.setindex!(x::HModuleElt{K,V},v,i) where{K,V}=
+function Base.setindex!(x::HModuleElt{K,V},v,i) where{K,V}
   if iszero(v) delete!(x.d,v) else x.d[i]=v end
+  x
+end
 
 # Valid for ops such that op(0,x)=op(x,0)=x otherwise the result is wrong.
 Base.merge(op::Function,a::HModuleElt,b::HModuleElt)=HModuleElt(merge(op,a.d,b.d))
@@ -340,7 +342,7 @@ function Base.setindex!(x::ModuleElt{K,V},v,key) where {K,V}
   elseif iszero(v) deleteat!(x.d,r)
   else x.d[r]=key=>v
   end
-  v
+  x
 end
 
 function Base.haskey(x::ModuleElt{K,V},i) where {K,V}
