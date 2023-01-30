@@ -408,6 +408,8 @@ $M(x::Base.Generator;u...)=$M(collect(x);u...)
 Base.:+(a::$M,b::$M)=merge(+,a,b)
 Base.:-(a::$M)=iszero(a) ? a : $M(k=>-v for(k,v) in a;check=false)
 
+Base.push!(x::$M,p::Pair)=setindex!(x,p[2]+getindex(x,p[1]),p[1])
+
 # multiply module element by scalar
 function Base.:*(a::$M{K,V},b)where {K,V}
   if iszero(b) || iszero(a) 
