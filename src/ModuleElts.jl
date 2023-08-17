@@ -3,10 +3,10 @@ Module Elements --- elements of free modules.
 
 A  `ModuleElt{K,V}`  represents  an  element  of  a free module where basis
 elements  are of type  `K` and coefficients  of type `V`.  Usually you want
-objects  of type `V` to be elements of  a ring, but it could also be useful
-if  they just belong to  an abelian group. This  is similar to the SageMath
-CombinatorialFreeModule.  You can  also see  them as  `SparseVector`s where
-keys can be type `K` instead of integers.
+objects of type `V` to be elements of a (non-necessarily commutative) ring,
+but  it could also be useful if they  just belong to an abelian group. This
+is  similar to the SageMath CombinatorialFreeModule.  You can also see them
+as `SparseVector`s where keys can be of type `K` instead of integers.
 
 This  basic  data  structure  is  used  in  my  packages  as  an  efficient
 representation   at  many   places.  For   example,  the   `Monomial`  type
@@ -36,10 +36,9 @@ the  only difference is weeding  out keys which have  a zero cofficient ---
 which  is necessary since for testing equality of module elements one needs
 a canonical form for each element.
 
-  - `ModuleElt`, a faster implementation which keeps a list of pairs sorted
-    by key.
+  - `ModuleElt`, a faster implementation by a vector of pairs sorted by key.
 
-This  demands that the type `K`  has a `isless` method. This implementation
+This  requires that the type `K` has a `isless` method. This implementation
 is  two to  four times  faster than  the `Dict`  one and  requires half the
 memory.
 
@@ -51,20 +50,24 @@ variation  on `merge`  for `Dict`s  where keys  with zero value are deleted
 after  the operation (here `+`  can be replaced by  any operation `op` with
 the property that `op(0,x)=op(x,0)=x`).
 
-A module element can also be negated, or multiplied or divided (`/`or `//`)
-by  some element (acting on coefficients)  if the method is defined between
-type `V` and that element; there are also `zero` and `iszero` methods.
+A  module element can also be negated, or multiplied or divided (`/`or `//`
+or  `\\`) by some element (acting on coefficients) if the method is defined
+between type `V` and that element; the order of the arguments is respected,
+which  allows to implement  left and right  modules when multiplication for
+`V` is non-commutative. There are also `zero` and `iszero` methods.
 
-`ModuleElt`s  have  methods  `cmp`  and  `isless` which `HModuleElt`s don't
-have. There is also `ModuleElts.merge2` which does the same as merge but is
-valid  for more  general operations  (I use  it with  `min` and `max` which
-implement `gcd` and `lcm` for `Monomial`s and `CycPol`s).
+`ModuleElt`s have methods `cmp` and `isless` which `HModuleElt`s don't have
+(the  definition is lexicographic order). There is also `ModuleElts.merge2`
+which  does the same as  merge but is valid  for more general operations --
+thus  is more expensive since it needs  more checks for zero results (I use
+it with `min` and `max` which implement `gcd` and `lcm` for `Monomial`s and
+`CycPol`s).
 
-Here  is an example where basis elements are `Symbol`s and coefficients are
-`Int`. As you can see in the examples, at the REPL (or in Jupyter or Pluto,
-when  `IO`  has  the  `:limit`  attribute)  the  `show`  method  shows  the
-coefficients  (bracketed  if  necessary,  which  is  when  they  have inner
-occurences  of `+-*/`), followed by showing  the basis elements. The `repr`
+We  show  now  an  an  example;  here  basis  elements  are  `Symbol`s  and
+coefficients  are `Int`. As you can see in the examples, at the REPL (or in
+Jupyter  or Pluto, when `IO` has  the `:limit` attribute) the `show` method
+gives  a nice display where the coefficients (bracketed if necessary, which
+is  when they have inner occurences of  `+-*/`) preced the keys. The `repr`
 method gives a representation which can be read back in julia:
 
 ```julia-repl
@@ -91,7 +94,7 @@ We illustrate basic operations on `ModuleElt`s:
 julia> a-a
 0
 
-julia> a*99
+julia> a*99 # Ints commute so same as 99*a
 99:xy-99:yx
 
 julia> a//2
@@ -109,29 +112,35 @@ julia> a[:xy] # indexing by a basis element finds the coefficient
 julia> a[:xx] # the coefficient of an absent basis element is zero.
 0
 
-julia> haskey(a,:xx)
+julia> haskey(a,:xx) # same as !iszero(a[:xx])
 false
 
+julia> a[:xx]=1 # this does an insertion
+1
+
 julia> first(a)
-:xy => 1
+:xx => 1
 
 julia> collect(a)
-2-element Vector{Pair{Symbol, Int64}}:
+3-element Vector{Pair{Symbol, Int64}}:
+ :xx => 1
  :xy => 1
  :yx => -1
 
 julia> collect(keys(a))
-2-element Vector{Symbol}:
+3-element Vector{Symbol}:
+ :xx
  :xy
  :yx
 
 julia> collect(values(a))
-2-element Vector{Int64}:
+3-element Vector{Int64}:
+  1
   1
  -1
 
 julia> length(a)
-2
+3
 
 julia> eltype(a)
 Pair{Symbol, Int64}
@@ -244,11 +253,18 @@ Base.isless(x::ModuleElt,y::ModuleElt)=cmp(x,y)==-1
 """
 `merge(op::Function,a::ModuleElt,b::ModuleElt)`
 
-is  like merge(op,a,b) for Dicts, except that keys with value 0 are deleted
-after the operation is done.
+is  like `merge(op,a,b)` for  `Dict`s, except that  keys with value `0` are
+deleted after the operation is done.
 
 The  code is only  valid for `op`s  such that `op(0,x)=op(x,0)=x` otherwise
-the result is wrong.
+the result is wrong. You can use `ModuleElts.merge2` for a (more expensive)
+function which always works.
+
+`merge(op,m::ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
+
+`merge(op,b,m::ModuleElt)` does `v->op(b,v)` on the values of `m`.
+
+`merge(op,m::ModuleElt)` does `v->op(v)` on the values of `m`.
 """
 function Base.merge(op::Function,a::ModuleElt,b::ModuleElt)
   (a,b)=promote(a,b)
@@ -354,9 +370,8 @@ Base.pairs(x::ModuleElt)=x.d
 Base.keys(x::ModuleElt)=(first(p) for p in x.d)
 Base.values(x::ModuleElt)=(last(p) for p in x.d)
 
-# copied from Util.jl in order to have a self-contained file.
-# Tries to determine which coefficients should be bracketed for unambiguous
-# display
+# The next function takes as argument a string representing a coefficient.
+# Tries to determine if it should be bracketed for unambiguous display
 function format_coefficient(c::String)
   if c=="1" ""
   elseif c=="-1" "-"
@@ -367,40 +382,24 @@ end
 
 #-------------- methods which have same code in both implementations-------
 
-# I get an error "M not defined" if I put next routine on following loop
+for M in (:HModuleElt, :ModuleElt)
+  @eval begin
 
 # we assume that converting the keys from K to K1 does not change hashing
 # for the Dict implementation or sorting for the ModuleElt implementation
-function Base.convert(::Type{ModuleElt{K,V}},a::ModuleElt{K1,V1}) where {K,K1,V,V1}
+function Base.convert(::Type{$M{K,V}},a::$M{K1,V1}) where {K,K1,V,V1}
   if K==K1
     if V==V1 a
-    elseif iszero(a) zero(ModuleElt{K,V})
+    elseif iszero(a) zero($M{K,V})
     else ModuleElt(k=>convert(V,v) for (k,v) in a.d;check=false)
     end
   else 
-    if iszero(a) zero(ModuleElt{K,V})
+    if iszero(a) zero($M{K,V})
     elseif V==V1  ModuleElt(convert(K,k)=>v for (k,v) in a.d;check=false)
     else ModuleElt(convert(K,k)=>convert(V,v) for (k,v) in a.d;check=false)
     end
   end
 end
-
-function Base.convert(::Type{HModuleElt{K,V}},a::HModuleElt{K1,V1}) where {K,K1,V,V1}
-  if K==K1
-    if V==V1 a
-    elseif iszero(a) zero(HModuleElt{K,V})
-    else HModuleElt(k=>convert(V,v) for (k,v) in a.d;check=false)
-    end
-  else 
-    if iszero(a) zero(HModuleElt{K,V})
-    elseif V==V1  HModuleElt(convert(K,k)=>v for (k,v) in a.d;check=false)
-    else HModuleElt(convert(K,k)=>convert(V,v) for (k,v) in a.d;check=false)
-    end
-  end
-end
-
-for M in (:HModuleElt, :ModuleElt)
-  @eval begin
 
 $M(x::Pair...;u...)=$M(collect(x);u...)
 $M(x::Base.Generator;u...)=$M(collect(x);u...)
@@ -410,13 +409,22 @@ Base.:-(a::$M)=iszero(a) ? a : $M(k=>-v for(k,v) in a;check=false)
 
 Base.push!(x::$M,p::Pair)=setindex!(x,p[2]+getindex(x,p[1]),p[1])
 
-# multiply module element by scalar
+# multiply module element on left or right by scalar
 function Base.:*(a::$M{K,V},b)where {K,V}
   if iszero(b) || iszero(a) 
     return zero($M{K,promote_type(V,typeof(b))})
   end
   let b=b
     $M(k=>v*b for (k,v) in a;check=false)
+  end
+end
+
+function Base.:*(b,a::$M{K,V})where {K,V}
+  if iszero(b) || iszero(a) 
+    return zero($M{K,promote_type(V,typeof(b))})
+  end
+  let b=b
+    $M(k=>b*v for (k,v) in a;check=false)
   end
 end
 
@@ -461,36 +469,36 @@ function Base.show(io::IO,m::$M)
   print(io,res)
 end
 
-"""
-`merge(f,m::ModuleElt,b)` does `v->f(v,b)` on the values of `m`.
-"""
 function Base.merge(f::Function,m::$M{K,V},b)where {K,V}
-# non-usable when iszero(m) and zero(V) not defined
+# not usable when zero(V) not defined
   if iszero(m) return zero($M{K,typeof(f(zero(V),b))}) end
   p=(k=>f(v,b) for (k,v) in m)
   $M(p;check=any(x->iszero(last(x)),p))
 end
 
+function Base.merge(f::Function,b,m::$M{K,V})where {K,V}
+# not usable when zero(V) not defined
+  if iszero(m) return zero($M{K,typeof(f(b,zero(V)))}) end
+  p=(k=>f(b,v) for (k,v) in m)
+  $M(p;check=any(x->iszero(last(x)),p))
+end
+
+# this fuction is to resolve an ambiguity
 function Base.merge(f::Function,m::$M{K,V},b::AbstractDict)where {K,V}
   if iszero(m) return zero($M{K,typeof(f(zero(V),b))}) end
   p=(k=>f(v,b) for (k,v) in m)
   $M(p;check=any(x->iszero(last(x)),p))
 end
 
-"""
-`merge(f,m::ModuleElt)` does `v->f(v)` on the values of `m`.
-"""
 function Base.merge(f::Function,m::$M)
   p=(k=>f(v) for (k,v) in m)
   $M(p;check=any(x->iszero(last(x)),p))
 end
 
-end
-end
+Base.:/(m::$M,b)=merge(/,m,b)
+Base.:(//)(m::$M,b)=merge(//,m,b)
+Base.:\(b,m::$M)=merge(\,b,m)
 
-for M in (:HModuleElt, :ModuleElt), op in (:/,:(//))
-  @eval begin
-    Base.$op(m::$M,b)=merge($op,m,b)
-  end
+end
 end
 end
