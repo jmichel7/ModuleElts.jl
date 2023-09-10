@@ -386,17 +386,17 @@ for M in (:HModuleElt, :ModuleElt)
   @eval begin
 
 # we assume that converting the keys from K to K1 does not change hashing
-# for the Dict implementation or sorting for the ModuleElt implementation
+# for the Dict implementation or sorting for the pairs implementation
 function Base.convert(::Type{$M{K,V}},a::$M{K1,V1}) where {K,K1,V,V1}
   if K==K1
     if V==V1 a
     elseif iszero(a) zero($M{K,V})
-    else ModuleElt(k=>convert(V,v) for (k,v) in a.d;check=false)
+    else $M(k=>convert(V,v) for (k,v) in a.d;check=false)
     end
   else 
     if iszero(a) zero($M{K,V})
-    elseif V==V1  ModuleElt(convert(K,k)=>v for (k,v) in a.d;check=false)
-    else ModuleElt(convert(K,k)=>convert(V,v) for (k,v) in a.d;check=false)
+    elseif V==V1  $M(convert(K,k)=>v for (k,v) in a.d;check=false)
+    else $M(convert(K,k)=>convert(V,v) for (k,v) in a.d;check=false)
     end
   end
 end
