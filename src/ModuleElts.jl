@@ -395,8 +395,10 @@ function Base.convert(::Type{$M{K,V}},a::$M{K1,V1}) where {K,K1,V,V1}
     end
   else 
     if iszero(a) zero($M{K,V})
-    elseif V==V1  $M(convert(K,k)=>v for (k,v) in a.d;check=false)
-    else $M(convert(K,k)=>convert(V,v) for (k,v) in a.d;check=false)
+    elseif V==V1
+      $M(convert(K,k)=>v for (k,v) in a.d;check=false)
+    else
+      $M(convert(K,k)=>convert(V,v) for (k,v) in a.d;check=false)
     end
   end
 end
