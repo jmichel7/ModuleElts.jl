@@ -501,6 +501,8 @@ Base.:/(m::$M,b)=merge(/,m,b)
 Base.:(//)(m::$M,b)=merge(//,m,b)
 Base.:\(b,m::$M)=merge(\,b,m)
 
+using LinearAlgebra: LinearAlgebra
+LinearAlgebra.exactdiv(m::$M,b)=merge(LinearAlgebra.exactdiv,m,b)
 end
 end
 end
