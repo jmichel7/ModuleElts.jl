@@ -507,8 +507,6 @@ LinearAlgebra.exactdiv(m::$M,b)=merge(exactdiv,m,b)
 Base.min(m::$M,n::$M)=merge2(min,m,n)
 Base.max(m::$M,n::$M)=merge2(max,m,n)
 
-using LinearAlgebra: LinearAlgebra
-LinearAlgebra.exactdiv(m::$M,b)=merge(LinearAlgebra.exactdiv,m,b)
 end
 end
 end
