@@ -500,6 +500,12 @@ end
 Base.:/(m::$M,b)=merge(/,m,b)
 Base.:(//)(m::$M,b)=merge(//,m,b)
 Base.:\(b,m::$M)=merge(\,b,m)
+Base.div(m::$M,b)=merge(div,m,b)
+Base.conj(m::$M)=merge(conj,m)
+using LinearAlgebra: LinearAlgebra, exactdiv
+LinearAlgebra.exactdiv(m::$M,b)=merge(exactdiv,m,b)
+Base.min(m::$M,n::$M)=merge2(min,m,n)
+Base.max(m::$M,n::$M)=merge2(max,m,n)
 
 using LinearAlgebra: LinearAlgebra
 LinearAlgebra.exactdiv(m::$M,b)=merge(LinearAlgebra.exactdiv,m,b)
