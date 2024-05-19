@@ -2,6 +2,7 @@
 **`ModuleElts`** &mdash; *Module*.
 
 
+
 Module Elements –- elements of free modules.
 
 A  `ModuleElt{K,V}` represents an element of  a free module where the basis elements  are of type `K` and the coefficients are of type `V`. Usually you want  objects of type `V` to be elements of a (not necessarily commutative) ring,  but it can also  be useful if they  just belong to an abelian group. This is similar to the SageMath CombinatorialFreeModule. You can also think of  them as `SparseVector`s, where  the keys can be  of type `K` instead of integers.
@@ -130,7 +131,7 @@ julia> a+ModuleElt([:z=>1.0])
 ```
 
 
-<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/42bf9dcb247a7c08d9c6015068475ddd9b32784b/src/ModuleElts.jl#L1-L173' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/701d90fc408e308af44a82bb1b5c3d9e504cc681/src/ModuleElts.jl#L1-L173' class='documenter-source'>source</a><br>
 
 <a id='ModuleElts.ModuleElt' href='#ModuleElts.ModuleElt'>#</a>
 **`ModuleElts.ModuleElt`** &mdash; *Type*.
@@ -142,7 +143,7 @@ julia> a+ModuleElt([:z=>1.0])
 The  only field, a `Vector{Pair{K,V}}`, is  kept sorted by `K`; by default, the  constructor checks sorting, adds values with the same key, and deletes keys with zero value. This can be overriden with the keyword `check=false`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/42bf9dcb247a7c08d9c6015068475ddd9b32784b/src/ModuleElts.jl#L217-L225' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/701d90fc408e308af44a82bb1b5c3d9e504cc681/src/ModuleElts.jl#L217-L225' class='documenter-source'>source</a><br>
 
 <a id='Base.merge-Tuple{Function, ModuleElt, ModuleElt}' href='#Base.merge-Tuple{Function, ModuleElt, ModuleElt}'>#</a>
 **`Base.merge`** &mdash; *Method*.
@@ -155,26 +156,34 @@ is  like `merge(op,a,b)` for  `Dict`s, except that  keys with value `0` are dele
 
 The  code is only  valid for `op`s  such that `op(0,x)=op(x,0)=x` otherwise the result is wrong. You can use `ModuleElts.merge2` for a (more expensive) function which always works.
 
-`merge(op,m::ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
 
-`merge(op,b,m::ModuleElt)` does `v->op(b,v)` on the values of `m`.
-
-`merge(op,m::ModuleElt)` does `v->op(v)` on the values of `m`.
-
-
-<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/42bf9dcb247a7c08d9c6015068475ddd9b32784b/src/ModuleElts.jl#L254-L269' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/701d90fc408e308af44a82bb1b5c3d9e504cc681/src/ModuleElts.jl#L254-L263' class='documenter-source'>source</a><br>
 
 <a id='ModuleElts.merge2' href='#ModuleElts.merge2'>#</a>
 **`ModuleElts.merge2`** &mdash; *Function*.
 
 
 
-`merge2(op::Function,a::ModuleElt,b::ModuleElt)`
+`ModuleElts.merge2(op::Function,a::ModuleElt,b::ModuleElt)`
 
 does  `op` between coefficients of  the same basis element  in `a` and `b`. This  version works  for general  ops (not  necessarily commutative  or not satisfying  op(0,x)=op(x,0)=x).  It  currently  has  too  much  overhead to replace  `merge` for  + or  other ops  such that  op(0,x)==op(x,0)=x. It is useful for max or min which do lcm and gcd of `Monomial`s or `CycPol`s.
 
 
-<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/42bf9dcb247a7c08d9c6015068475ddd9b32784b/src/ModuleElts.jl#L292-L300' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/701d90fc408e308af44a82bb1b5c3d9e504cc681/src/ModuleElts.jl#L286-L294' class='documenter-source'>source</a><br>
+
+<a id='ModuleElts.oncoeffs' href='#ModuleElts.oncoeffs'>#</a>
+**`ModuleElts.oncoeffs`** &mdash; *Function*.
+
+
+
+`ModuleElts.oncoeffs(op,m::ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
+
+`ModuleElts.oncoeffs(op,b,m::ModuleElt)` does `v->op(b,v)` on the values of `m`.
+
+`ModuleElts.oncoeffs(op,m::ModuleElt)` does `v->op(v)` on the values of `m`.
+
+
+<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/701d90fc408e308af44a82bb1b5c3d9e504cc681/src/ModuleElts.jl#L506-L512' class='documenter-source'>source</a><br>
 
 <a id='Base.getindex-Tuple{ModuleElt, Any}' href='#Base.getindex-Tuple{ModuleElt, Any}'>#</a>
 **`Base.getindex`** &mdash; *Method*.
@@ -184,7 +193,7 @@ does  `op` between coefficients of  the same basis element  in `a` and `b`. This
 `getindex(x::ModuleElt,key)`  returns the value in  `x` associated with the `given key`. It returns zero if the key does not occur in `x`.
 
 
-<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/42bf9dcb247a7c08d9c6015068475ddd9b32784b/src/ModuleElts.jl#L341-L344' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/701d90fc408e308af44a82bb1b5c3d9e504cc681/src/ModuleElts.jl#L335-L338' class='documenter-source'>source</a><br>
 
 <a id='Base.setindex!-Tuple{ModuleElt, Any, Any}' href='#Base.setindex!-Tuple{ModuleElt, Any, Any}'>#</a>
 **`Base.setindex!`** &mdash; *Method*.
@@ -194,5 +203,5 @@ does  `op` between coefficients of  the same basis element  in `a` and `b`. This
 `setindex!(x::ModuleElt,v,key)`  sets `v`  as the  value in  `x` associated with  the  given  `key`.  Setting  a  value  to  zero  or  for a new key is expensive.
 
 
-<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/42bf9dcb247a7c08d9c6015068475ddd9b32784b/src/ModuleElts.jl#L351-L355' class='documenter-source'>source</a><br>
+<a target='_blank' href='https://github.com/jmichel7/ModuleElts.jl/blob/701d90fc408e308af44a82bb1b5c3d9e504cc681/src/ModuleElts.jl#L345-L349' class='documenter-source'>source</a><br>
 

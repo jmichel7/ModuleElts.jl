@@ -3,6 +3,7 @@ ModuleElts
 ModuleElt
 merge(::Function,::ModuleElt,::ModuleElt)
 ModuleElts.merge2
+ModuleElts.oncoeffs
 getindex(::ModuleElt,Any)
 setindex!(::ModuleElt,Any,Any)
 ```

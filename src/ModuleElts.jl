@@ -260,12 +260,6 @@ deleted after the operation is done.
 The  code is only  valid for `op`s  such that `op(0,x)=op(x,0)=x` otherwise
 the result is wrong. You can use `ModuleElts.merge2` for a (more expensive)
 function which always works.
-
-`merge(op,m::ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
-
-`merge(op,b,m::ModuleElt)` does `v->op(b,v)` on the values of `m`.
-
-`merge(op,m::ModuleElt)` does `v->op(v)` on the values of `m`.
 """
 function Base.merge(op::Function,a::ModuleElt,b::ModuleElt)
   (a,b)=promote(a,b)
@@ -290,7 +284,7 @@ function Base.merge(op::Function,a::ModuleElt,b::ModuleElt)
 end
 
 """
-`merge2(op::Function,a::ModuleElt,b::ModuleElt)`
+`ModuleElts.merge2(op::Function,a::ModuleElt,b::ModuleElt)`
 
 does  `op` between coefficients of  the same basis element  in `a` and `b`.
 This  version works  for general  ops (not  necessarily commutative  or not
@@ -509,6 +503,13 @@ end
 end
 Base.merge(f::Function,a::ModuleElt,b::HModuleElt)=error("ambiguous")
 Base.merge(f::Function,a::HModuleElt,b::ModuleElt)=error("ambiguous")
+"""
+`ModuleElts.oncoeffs(op,m::ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
+
+`ModuleElts.oncoeffs(op,b,m::ModuleElt)` does `v->op(b,v)` on the values of `m`.
+
+`ModuleElts.oncoeffs(op,m::ModuleElt)` does `v->op(v)` on the values of `m`.
+"""
 oncoeffs(f::Function,a::ModuleElt,b::HModuleElt)=error("ambiguous")
 oncoeffs(f::Function,a::HModuleElt,b::ModuleElt)=error("ambiguous")
 
