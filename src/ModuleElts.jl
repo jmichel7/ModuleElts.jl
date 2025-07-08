@@ -186,7 +186,7 @@ struct HModuleElt{K,V} <: AbstractDict{K,V}
   end
 end
 
-function HModuleElt(x::Vector{Pair{K,V}};check=true) where{K,V}
+function HModuleElt(x::Vector{Pair{K,V}};check::Bool=true) where{K,V}
   if !check || length(x)<=1 return HModuleElt(Dict(x)) end
   res=Dict{K,V}()
   for (k,v) in x
@@ -195,6 +195,12 @@ function HModuleElt(x::Vector{Pair{K,V}};check=true) where{K,V}
     end
   end
   HModuleElt(res)
+end
+
+function HModuleElt(d::AbstractVector{<:Pair}; check::Bool=true)
+  K = mapreduce(typeof ∘ first, Base.promote_type, d)
+  V = mapreduce(typeof ∘ last, Base.promote_type, d)
+  HModuleElt{K,V}(Vector{Pair{K,V}}(d); check)
 end
 
 # forwarded methods
@@ -229,6 +235,12 @@ struct ModuleElt{K,V} <: AbstractDict{K,V}
     if check normalize!(d) end
     new{K,V}(d)
   end
+end
+
+function ModuleElt(d::AbstractVector{<:Pair}; check::Bool=true)
+  K = mapreduce(typeof ∘ first, Base.promote_type, d)
+  V = mapreduce(typeof ∘ last, Base.promote_type, d)
+  ModuleElt{K,V}(Vector{Pair{K,V}}(d); check)
 end
 
 function normalize!(d::Vector{<:Pair})
