@@ -368,11 +368,12 @@ Base.values(x::ModuleElt)=(last(p) for p in x.d)
 
 # The next function takes as argument a string representing a coefficient.
 # Tries to determine if it should be bracketed for unambiguous display
-function format_coefficient(c::String)
+function format_coefficient(c::String,prod=false)
   if c=="1" ""
   elseif c=="-1" "-"
-  elseif match(r"^[-+]?([^-+*/]|√-|{-)*(\(.*\))?$",c)!==nothing c
-  else "("*c*")" 
+  elseif match(r"^[-+]?([^-+*/^]|√-|{-)*(\(.*\))?$",c)!==nothing 
+    prod ? c*"*" : c
+  else prod ? "("*c*")*" : "("*c*")" 
   end
 end
 
@@ -441,7 +442,7 @@ function Base.promote_rule(a::Type{$M{K1,V1}},
   $M{promote_type(K1,K2),promote_type(V1,V2)}
 end
 
-Base.show(io::IO, ::MIME"text/plain", m::$M)=show(io,m)
+#Base.show(io::IO, ::MIME"text/plain", m::$M)=show(io,m)
 
 function Base.show(io::IO,m::$M)
   if !(get(io,:limit,false) || get(io,:TeX,false))
@@ -458,7 +459,7 @@ function Base.show(io::IO,m::$M)
   for (k,v) in m 
     v=repr(v;context=io)
     k=showbasis(io,k)
-    if !isempty(k) v=format_coefficient(v) end
+    if !isempty(k) v=format_coefficient(v,get(io,:prod,false)) end
     if (isempty(v) || v[1]!='-') && !start v="+"*v end
     res*=v*k
     if start start=false end
