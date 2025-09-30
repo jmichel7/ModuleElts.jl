@@ -454,7 +454,8 @@ function Base.promote_rule(a::Type{$M{K1,V1}},
   $M{promote_type(K1,K2),promote_type(V1,V2)}
 end
 
-#Base.show(io::IO, ::MIME"text/plain", m::$M)=show(io,m)
+# next is necessary otherwise uses show from AbstractDict
+Base.show(io::IO, ::MIME"text/plain", m::$M)=show(io,m)
 
 function Base.show(io::IO,m::$M)
   if !(get(io,:limit,false) || get(io,:TeX,false))
