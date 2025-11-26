@@ -1,13 +1,13 @@
 """
 Module Elements --- elements of free modules.
 
-A  `ModuleElt{K,V}` represents an element of  a free module where the basis
-elements  are of type `K` and the coefficients are of type `V`. Usually you
-want  objects of type `V` to be elements of a (not necessarily commutative)
-ring,  but it can also  be useful if they  just belong to an abelian group.
-This is similar to the SageMath CombinatorialFreeModule. You can also think
-of  them as `SparseVector`s, where  the keys can be  of type `K` instead of
-integers.
+A  [`ModuleElt`](@ref)`{K,V}` represents an element  of a free module where
+the  basis elements are of  type `K` and the  coefficients are of type `V`.
+Usually  you want objects of type `V`  to be elements of a (not necessarily
+commutative)  ring, but  it can  also be  useful if  they just belong to an
+abelian group. This is similar to the SageMath CombinatorialFreeModule. You
+can  also think of them  as `SparseVector`s, where the  keys can be of type
+`K` instead of integers.
 
 This  basic data  structure is  used in  many places  in my  packages as an
 efficient   representation.  For   example,  the   type  `Monomial`,  which
@@ -44,12 +44,13 @@ is  two to  four times  faster than  the `Dict` implementation and requires
 half the memory.
 
 Both  implementations  have  the  same  methods,  which are mostly the same
-methods  as a  `Dict` (`haskey`,  `getindex`, `setindex`, `keys`, `values`.
-`pairs`,   `first`,  `iterate`,  `length`,  `eltype`,  `copy`),  with  some
-exceptions.  Adding elements  is implemented  as `merge(+,...)`  which is a
-variation  on  `merge`  for  `Dict`s  where  keys with coefficient zero are
-discarded  after the operation  (here `+` can  be replaced by any operation
-`op` with the property that `op(0,x)=op(x,0)=x`).
+methods  as  a  `Dict`  (`haskey`,  [`getindex`](@ref), [`setindex!`](@ref),
+`keys`, `values`. `pairs`, `first`, `iterate`, `length`, `eltype`, `copy`),
+with some exceptions. Adding elements is implemented as
+[`merge`](@ref)`(+,...)`  which is a variation on `merge` for `Dict`s where
+keys  with coefficient zero are discarded after the operation (here `+` can
+be replaced by any operation `op` with the property that
+`op(0,x)=op(x,0)=x`).
 
 A  module element can also be negated, or multiplied or divided (`/`or `//`
 or  `\\`) by any element (acting on  coefficients) if the method is defined
@@ -59,11 +60,11 @@ multiplication  is  not  commutative  for  `V`.  There  are also `zero` and
 `iszero` methods.
 
 `ModuleElt`s have methods `cmp` and `isless` which `HModuleElt`s don't have
-(the  definition is lexicographic order). There is also `ModuleElts.merge2`
-which  does the same as  merge but is valid  for more general operations --
-thus  is more expensive since it needs  more checks for zero results (I use
-it with `min` and `max` which implement `gcd` and `lcm` for `Monomial`s and
-`CycPol`s).
+(the definition is lexicographic order). There is also
+[`ModuleElts.merge2`](@ref)  which does the same as  merge but is valid for
+more  general  operations  --  thus  is  more expensive since it needs more
+checks  for zero  results (I  use it  with `min`  and `max` which implement
+`gcd` and `lcm` for `Monomial`s and `CycPol`s).
 
 We  now show an an  example; here the basis  elements are `Symbol`s and the
 coefficients  are `Int`. As you can see  from the examples, at the REPL (or

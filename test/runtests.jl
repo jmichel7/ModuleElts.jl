@@ -3,18 +3,14 @@ using Test, ModuleElts
 function mytest(file::String,cmd::String,man::String)
   println(file," ",cmd)
   exec=repr(MIME("text/plain"),eval(Meta.parse(cmd)),context=:limit=>true)
-  if endswith(cmd,";") exec="nothing" 
-  else exec=replace(exec,r"\s*$"m=>"")
-       exec=replace(exec,r"\s*$"s=>"")
-  end
-  if exec!=man 
-    i=1
-    while i<=lastindex(exec) && i<=lastindex(man) && exec[i]==man[i]
-      i=nextind(exec,i)
-    end
-    print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
-  end
-  exec==man
+  if endswith(cmd,";") return true end
+  exec=replace(exec,r"\s*$"m=>""); exec=replace(exec,r"\s*$"s=>"")
+  exec=replace(exec,r"^\s*"=>"")
+  if exec==man return true end
+  inds=collect(eachindex(exec))
+  i=inds[findfirst(i->i<=lastindex(man) && exec[i]!=man[i],inds)]
+  print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
+  false
 end
 @testset "ModuleElts.jl" begin
 @test mytest("ModuleElts.jl","a=ModuleElt(:xy=>1,:yx=>-1)",":xy-:yx")

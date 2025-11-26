@@ -1,3 +1,10 @@
+```@meta
+CurrentModule = ModuleElts
+```
+# ModuleElts
+
+Documentation for [ModuleElts](https://github.com/jmichel7/ModuleElts.jl).
+
 ```@docs
 ModuleElts
 ModuleElt
