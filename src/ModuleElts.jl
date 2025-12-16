@@ -506,6 +506,13 @@ Base.:/(m::$M,b)=oncoeffs(/,m,b)
 Base.:(//)(m::$M,b)=oncoeffs(//,m,b)
 Base.:\(b,m::$M)=oncoeffs(\,b,m)
 Base.div(m::$M,b)=oncoeffs(div,m,b)
+"""
+`ModuleElts.onkeys(op,m::ModuleElt)` does `v->op(v)` on the keys of `m`.
+"""
+function onkeys(f::Function,m::$M)
+  $M(f(k)=>v for (k,v) in m)
+end
+
 using LinearAlgebra: LinearAlgebra, exactdiv
 LinearAlgebra.exactdiv(m::$M,b)=oncoeffs(exactdiv,m,b)
 Base.min(m::$M,n::$M)=merge2(min,m,n)
