@@ -174,7 +174,7 @@ julia> a+ModuleElt([:z=>1.0])
 """
 module ModuleElts
 
-export ModuleElt, HModuleElt # data structure
+export HModuleElt, ModuleElt # data structure
 
 #------------- implementation with Dicts ----------------------
 struct HModuleElt{K,V} <: AbstractDict{K,V}
@@ -519,12 +519,12 @@ Base.min(m::$M,n::$M)=merge2(min,m,n)
 Base.max(m::$M,n::$M)=merge2(max,m,n)
 
 # next 8 methods to resolve ambiguities
-Base.:*(a::$M,b::$M)=error("ambiguous")
-oncoeffs(f::Function,a::$M,b::$M)=error("ambiguous")
+Base.:*(::$M,::$M)=error("ambiguous")
+oncoeffs(::Function,::$M,::$M)=error("ambiguous")
 end
 end
-Base.merge(f::Function,a::ModuleElt,b::HModuleElt)=error("ambiguous")
-Base.merge(f::Function,a::HModuleElt,b::ModuleElt)=error("ambiguous")
+Base.merge(::Function,::ModuleElt,::HModuleElt)=error("ambiguous")
+Base.merge(::Function,::HModuleElt,::ModuleElt)=error("ambiguous")
 """
 `ModuleElts.oncoeffs(op,m::ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
 
@@ -532,9 +532,9 @@ Base.merge(f::Function,a::HModuleElt,b::ModuleElt)=error("ambiguous")
 
 `ModuleElts.oncoeffs(op,m::ModuleElt)` does `v->op(v)` on the values of `m`.
 """
-oncoeffs(f::Function,a::ModuleElt,b::HModuleElt)=error("ambiguous")
-oncoeffs(f::Function,a::HModuleElt,b::ModuleElt)=error("ambiguous")
+oncoeffs(::Function,::ModuleElt,::HModuleElt)=error("ambiguous")
+oncoeffs(::Function,::HModuleElt,::ModuleElt)=error("ambiguous")
 
-Base.:*(a::ModuleElt,b::HModuleElt)=error("ambiguous")
-Base.:*(a::HModuleElt,b::ModuleElt)=error("ambiguous")
+Base.:*(::ModuleElt,::HModuleElt)=error("ambiguous")
+Base.:*(::HModuleElt,::ModuleElt)=error("ambiguous")
 end
