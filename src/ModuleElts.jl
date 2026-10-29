@@ -33,7 +33,7 @@ We provide two implementations:
 
 This  requires  the  type  `K`  to  be  hashable.  This  is  a  very simple
 implementation  since the interface of the type  is close to that of dicts;
-the  only difference  is that  keys with  cofficient zero are discarded ---
+the  only difference is  that keys with  coefficient zero are discarded ---
 which  is necessary, since for checking the equality of module elements one
 needs a canonical form for each element.
 
@@ -41,15 +41,15 @@ needs a canonical form for each element.
 
 This requires that the type `K` has an `isless` method. This implementation
 is  two to  four times  faster than  the `Dict` implementation and requires
-half the memory.
+half the memory. However it is slower for lookups.
 
 Both  implementations  have  the  same  methods,  which are mostly the same
-methods  as  a  `Dict`  (`haskey`,  [`getindex`](@ref), [`setindex!`](@ref),
+methods  as  a  `Dict`  (`haskey`, [`getindex`](@ref), [`setindex!`](@ref),
 `keys`, `values`. `pairs`, `first`, `iterate`, `length`, `eltype`, `copy`),
 with some exceptions. Adding elements is implemented as
-[`merge`](@ref)`(+,...)`  which is a variation on `merge` for `Dict`s where
-keys  with coefficient zero are discarded after the operation (here `+` can
-be replaced by any operation `op` with the property that
+[`mergewith`](@ref)`(+,...)`  which  is  a  variation  on  `mergewith`  for
+`Dict`s  where keys with coefficient zero are discarded after the operation
+(here  `+` can  be replaced  by any  operation `op`  with the property that
 `op(0,x)=op(x,0)=x`).
 
 A  module element can also be negated, or multiplied or divided (`/`or `//`
@@ -60,9 +60,9 @@ multiplication  is  not  commutative  for  `V`.  There  are also `zero` and
 `iszero` methods.
 
 `ModuleElt`s have methods `cmp` and `isless` which `HModuleElt`s don't have
-(the definition is lexicographic order). There is also
-[`ModuleElts.merge2`](@ref)  which does the same as  merge but is valid for
-more  general  operations  --  thus  is  more expensive since it needs more
+--- the definition is lexicographic order. There is also
+[`ModuleElts.merge2`](@ref)  which does the same  as mergewith but is valid
+for  more general operations -- thus is  more expensive since it needs more
 checks  for zero  results (I  use it  with `min`  and `max` which implement
 `gcd` and `lcm` for `Monomial`s and `CycPol`s).
 
@@ -89,7 +89,7 @@ changes how the basis elements are printed.
 
 ```julia-rep1
 julia> show(IOContext(stdout,:limit=>true,:showbasis=>(io,s)->string("<",s,">")),a)
-3<xy>+2<yx>
+<xy>-<yx>
 ```
 We illustrate basic operations on `ModuleElt`s:
 
@@ -154,7 +154,8 @@ removing zero coefficients and merging duplicate basis elements, adding the
 corresponding   coefficients  (and   sorting  the   basis  in  the  default
 implementation).  If you know  that this normalisation  is unnecessary, you
 can  disable it for  maximum speed by  passing the keyword `check=false` to
-the constructor.
+the  constructor. Note that since  `HModuleElt` uses a `Dict`, `check=true`
+is necessary in the constructor if there are equal keys.
 
 ```julia-repl
 julia> a=ModuleElt(:yy=>1, :yx=>2, :xy=>3, :yy=>-1;check=false)
@@ -199,9 +200,10 @@ function HModuleElt(x::Vector{Pair{K,V}};check::Bool=true) where{K,V}
 end
 
 function HModuleElt(d::AbstractVector{<:Pair}; check::Bool=true)
+  if isempty(d) error("use HModuleElt(Pair{K,V}[]) or zero(HModuleElt{K,V})") end
   K = mapreduce(typeof ∘ first, Base.promote_type, d)
   V = mapreduce(typeof ∘ last, Base.promote_type, d)
-  HModuleElt{K,V}(Vector{Pair{K,V}}(d); check)
+  HModuleElt(Vector{Pair{K,V}}(d); check)
 end
 
 # forwarded methods
@@ -211,12 +213,12 @@ Base.values(x::HModuleElt)=values(x.d)
 
 Base.getindex(x::HModuleElt{K,V},i) where{K,V}=haskey(x,i) ?  x.d[i] : zero(V)
 function Base.setindex!(x::HModuleElt{K,V},v,i) where{K,V}
-  if iszero(v) delete!(x.d,v) else x.d[i]=v end
+  if iszero(v) delete!(x.d,i) else x.d[i]=v end
   x
 end
 
 # Valid for ops such that op(0,x)=op(x,0)=x otherwise the result is wrong.
-Base.merge(op::Function,a::HModuleElt,b::HModuleElt)=HModuleElt(merge(op,a.d,b.d))
+Base.mergewith(op::Function,a::HModuleElt,b::HModuleElt)=HModuleElt(mergewith(op,a.d,b.d))
 
 # since merge2 not implemented
 Base.:-(a::HModuleElt,b::HModuleElt)=a+(-b) 
@@ -228,7 +230,9 @@ has the advantage that ModuleElts are naturally sortable.
 
 The  only field, a `Vector{Pair{K,V}}`, is  kept sorted by `K`; by default,
 the  constructor checks sorting, adds values with the same key, and deletes
-keys with zero value. This can be overriden with the keyword `check=false`.
+keys  with zero value  (note that the  argument is not  copied before being
+modified).  Normalizing  the  argument  can  be  overriden with the keyword
+`check=false`.
 """
 struct ModuleElt{K,V} <: AbstractDict{K,V}
   d::Vector{Pair{K,V}}
@@ -239,19 +243,22 @@ struct ModuleElt{K,V} <: AbstractDict{K,V}
 end
 
 function ModuleElt(d::AbstractVector{<:Pair}; check::Bool=true)
+  if isempty(d) error("use ModuleElt(Pair{K,V}[]) or zero(ModuleElt{K,V})") end
   K = mapreduce(typeof ∘ first, Base.promote_type, d)
   V = mapreduce(typeof ∘ last, Base.promote_type, d)
-  ModuleElt{K,V}(Vector{Pair{K,V}}(d); check)
+  ModuleElt(Vector{Pair{K,V}}(d); check)
 end
 
-function normalize!(d::Vector{<:Pair})
+function normalize!(d::Vector{Pair{K,V}})where {K,V}
   if isempty(d) return end
   if !issorted(d,by=first) sort!(d,by=first) end
   i=1
   ki,vi=d[i]
 @inbounds for j in 2:length(d)
     if first(d[j])==ki
-      vi+=last(d[j])
+      if V<:Integer vi=Base.checked_add(vi,last(d[j]))
+      else vi+=last(d[j])
+      end
       d[i]=ki=>vi
     else 
       if !iszero(vi) i+=1 end
@@ -265,16 +272,16 @@ Base.cmp(x::ModuleElt,y::ModuleElt)=cmp(x.d,y.d)
 Base.isless(x::ModuleElt,y::ModuleElt)=cmp(x,y)==-1
 
 """
-`merge(op::Function,a::ModuleElt,b::ModuleElt)`
+`mergewith(op::Function,a::ModuleElt,b::ModuleElt)`
 
-is  like `merge(op,a,b)` for  `Dict`s, except that  keys with value `0` are
+is  like `mergewith(op,a,b)` for  `Dict`s, except that  keys with value `0` are
 deleted after the operation is done.
 
 The  code is only  valid for `op`s  such that `op(0,x)=op(x,0)=x` otherwise
 the result is wrong. You can use `ModuleElts.merge2` for a (more expensive)
 function which always works.
 """
-function Base.merge(op::Function,a::ModuleElt,b::ModuleElt)
+function Base.mergewith(op::Function,a::ModuleElt,b::ModuleElt)
   (a,b)=promote(a,b)
   la=length(a.d)
   lb=length(b.d)
@@ -302,7 +309,7 @@ end
 does  `op` between coefficients of  the same basis element  in `a` and `b`.
 This  version works  for general  ops (not  necessarily commutative  or not
 satisfying  op(0,x)=op(x,0)=x).  It  currently  has  too  much  overhead to
-replace  `merge` for  + or  other ops  such that  op(0,x)==op(x,0)=x. It is
+replace  `mergewith` for + or other ops such that op(0,x)==op(x,0)=x. It is
 useful for max or min which do lcm and gcd of `Monomial`s or `CycPol`s.
 """
 function merge2(op::Function,a::ModuleElt,b::ModuleElt)
@@ -390,6 +397,9 @@ function format_coefficient(c::String,prod=false)
   end
 end
 
+Base.min(m::ModuleElt,n::ModuleElt)=merge2(min,m,n)
+Base.max(m::ModuleElt,n::ModuleElt)=merge2(max,m,n)
+
 #-------------- methods which have same code in both implementations-------
 
 for M in (:HModuleElt, :ModuleElt)
@@ -413,10 +423,12 @@ function Base.convert(::Type{$M{K,V}},a::$M{K1,V1}) where {K,K1,V,V1}
   end
 end
 
+Base.get(x::$M, key, default)=haskey(x,key) ? x[key] : default
+
 $M(x::Pair...;u...)=$M(collect(x);u...)
 $M(x::Base.Generator;u...)=$M(collect(x);u...)
 
-Base.:+(a::$M,b::$M)=merge(+,a,b)
+Base.:+(a::$M,b::$M)=mergewith(+,a,b)
 Base.:-(a::$M)=iszero(a) ? a : $M(k=>-v for(k,v) in a;check=false)
 
 Base.push!(x::$M,p::Pair)=setindex!(x,p[2]+getindex(x,p[1]),p[1])
@@ -486,19 +498,19 @@ end
 function oncoeffs(f::Function,m::$M{K,V},b)where {K,V}
   if iszero(m) return zero($M{K,typeof(f(zero(V),b))}) end
   p=(k=>f(v,b) for (k,v) in m)
-  $M(p;check=any(x->iszero(last(x)),p))
+  $M(p;check=any(iszero∘last,p))
 end
 
 # if iszero(m) needs that zero(V) is defined
 function oncoeffs(f::Function,b,m::$M{K,V})where {K,V}
   if iszero(m) return zero($M{K,typeof(f(b,zero(V)))}) end
   p=(k=>f(b,v) for (k,v) in m)
-  $M(p;check=any(x->iszero(last(x)),p))
+  $M(p;check=any(iszero∘last,p))
 end
 
 function oncoeffs(f::Function,m::$M)
   p=(k=>f(v) for (k,v) in m)
-  $M(p;check=any(x->iszero(last(x)),p))
+  $M(p;check=any(iszero∘last,p))
 end
 
 Base.conj(m::$M)=oncoeffs(conj,m)
@@ -515,16 +527,14 @@ end
 
 using LinearAlgebra: LinearAlgebra, exactdiv
 LinearAlgebra.exactdiv(m::$M,b)=oncoeffs(exactdiv,m,b)
-Base.min(m::$M,n::$M)=merge2(min,m,n)
-Base.max(m::$M,n::$M)=merge2(max,m,n)
 
 # next 8 methods to resolve ambiguities
 Base.:*(::$M,::$M)=error("ambiguous")
 oncoeffs(::Function,::$M,::$M)=error("ambiguous")
 end
 end
-Base.merge(::Function,::ModuleElt,::HModuleElt)=error("ambiguous")
-Base.merge(::Function,::HModuleElt,::ModuleElt)=error("ambiguous")
+Base.mergewith(::Function,::ModuleElt,::HModuleElt)=error("ambiguous")
+Base.mergewith(::Function,::HModuleElt,::ModuleElt)=error("ambiguous")
 """
 `ModuleElts.oncoeffs(op,m::ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
 
