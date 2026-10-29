@@ -35,3 +35,4 @@ end
 @test mytest("ModuleElts.jl","a=ModuleElt(:yy=>1, :yx=>2, :xy=>3, :yy=>-1)","3:xy+2:yx")
 @test mytest("ModuleElts.jl","a+ModuleElt([:z=>1.0])","3.0:xy+2.0:yx+1.0:z")
 end
+include("properties.jl")

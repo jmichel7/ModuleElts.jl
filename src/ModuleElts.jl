@@ -220,8 +220,25 @@ end
 # Valid for ops such that op(0,x)=op(x,0)=x otherwise the result is wrong.
 Base.mergewith(op::Function,a::HModuleElt,b::HModuleElt)=HModuleElt(mergewith(op,a.d,b.d))
 
-# since merge2 not implemented
-Base.:-(a::HModuleElt,b::HModuleElt)=a+(-b) 
+function merge2(op::Function,a::HModuleElt{K,V},b::HModuleElt{K,V})where {K,V}
+  (a,b)=promote(a,b)
+  res=Dict{K,V}()
+  for (k,v) in a.d
+    s=op(v,zero(V))
+    if !iszero(s) res[k]=s end
+  end
+  for (k,v) in b.d
+    if haskey(a.d,k) # then op was applied to (v,zero(V)) above: undo and redo
+      s=op(a.d[k],v)
+      if iszero(s) delete!(res,k) else res[k]=s end
+    else
+      s=op(zero(V),v)
+      if !iszero(s) res[k]=s end
+    end
+  end
+  HModuleElt(res;check=false)
+end
+
 #-------------- faster implementation -------------------------------------
 """
 `ModuleElt{K,V}`  has a  similar interface  to `Dict{K,V}`,  but instead of
@@ -304,7 +321,7 @@ function Base.mergewith(op::Function,a::ModuleElt,b::ModuleElt)
 end
 
 """
-`ModuleElts.merge2(op::Function,a::ModuleElt,b::ModuleElt)`
+`ModuleElts.merge2(op::Function,a::[H]ModuleElt,b::[H]ModuleElt)`
 
 does  `op` between coefficients of  the same basis element  in `a` and `b`.
 This  version works  for general  ops (not  necessarily commutative  or not
@@ -349,8 +366,6 @@ function merge2(op::Function,a::ModuleElt,b::ModuleElt)
   end
   ModuleElt(resize!(res,ri);check=false)
 end
-
-Base.:-(a::ModuleElt,b::ModuleElt)=merge2(-,a,b) # faster than a+(-b)
 
 """
 `getindex(x::ModuleElt,key)`  returns the value in  `x` associated with the
@@ -397,13 +412,14 @@ function format_coefficient(c::String,prod=false)
   end
 end
 
-Base.min(m::ModuleElt,n::ModuleElt)=merge2(min,m,n)
-Base.max(m::ModuleElt,n::ModuleElt)=merge2(max,m,n)
-
 #-------------- methods which have same code in both implementations-------
 
 for M in (:HModuleElt, :ModuleElt)
   @eval begin
+
+Base.:-(a::$M,b::$M)=merge2(-,a,b) # faster than a+(-b)
+Base.min(m::$M,n::$M)=merge2(min,m,n)
+Base.max(m::$M,n::$M)=merge2(max,m,n)
 
 # we assume that converting the keys from K to K1 does not change hashing
 # for the Dict implementation or sorting for the pairs implementation
@@ -459,7 +475,11 @@ Base.zero(::Type{$M{K,V}}) where{K,V}=$M(Pair{K,V}[])
 Base.:(==)(a::$M,b::$M)=a.d==b.d
 @inline Base.iterate(x::$M,y...)=iterate(x.d,y...) # inline make a difference
 Base.length(x::$M)=length(x.d)
-Base.hash(x::$M, h::UInt)=hash(x.d,h)
+function Base.hash(x::$M, h::UInt)
+  h=hash(ModuleElts, h)
+  for p in x.d h⊻=hash(p, 0x9e3779b97f4a7c15) end
+  h
+end
 Base.copy(x::$M)=$M(copy(x.d);check=false)
 
 function Base.promote_rule(a::Type{$M{K1,V1}},
