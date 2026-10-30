@@ -301,7 +301,7 @@ Base.cmp(x::ModuleElt,y::ModuleElt)=cmp(x.d,y.d)
 Base.isless(x::ModuleElt,y::ModuleElt)=cmp(x,y)==-1
 
 """
-`mergewith(op::Function,a::ModuleElt,b::ModuleElt)`
+`mergewith(op::Function,a::[H]ModuleElt,b::[H]ModuleElt)`
 
 is  like `mergewith(op,a,b)` for  `Dict`s, except that  keys with value `0` are
 deleted after the operation is done.
@@ -380,7 +380,7 @@ function merge2(op::Function,a::ModuleElt,b::ModuleElt)
 end
 
 """
-`getindex(x::ModuleElt,key)`  returns the value in  `x` associated with the
+`getindex(x::[H]ModuleElt,key)`  returns the value in  `x` associated with the
 `given key`. It returns zero if the key does not occur in `x`.
 """
 function Base.getindex(x::ModuleElt{K,V},i) where {K,V}
@@ -390,7 +390,7 @@ function Base.getindex(x::ModuleElt{K,V},i) where {K,V}
 end
 
 """
-`setindex!(x::ModuleElt,v,key)`  sets `v`  as the  value in  `x` associated
+`setindex!(x::[H]ModuleElt,v,key)`  sets `v`  as the  value in  `x` associated
 with  the  given  `key`.  Setting  a  value  to  zero  or  for a new key is
 expensive.
 """
@@ -549,7 +549,7 @@ Base.:(//)(m::$M,b)=oncoeffs(//,m,b)
 Base.:\(b,m::$M)=oncoeffs(\,b,m)
 Base.div(m::$M,b)=oncoeffs(div,m,b)
 """
-`ModuleElts.onkeys(op,m::ModuleElt)` does `v->op(v)` on the keys of `m`.
+`ModuleElts.onkeys(op,m::[H]ModuleElt)` does `v->op(v)` on the keys of `m`.
 """
 function onkeys(f::Function,m::$M)
   $M(f(k)=>v for (k,v) in m)
@@ -566,11 +566,11 @@ end
 Base.mergewith(::Function,::ModuleElt,::HModuleElt)=error("not implemented")
 Base.mergewith(::Function,::HModuleElt,::ModuleElt)=error("not implemented")
 """
-`ModuleElts.oncoeffs(op,m::ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
+`ModuleElts.oncoeffs(op,m::[H]ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
 
-`ModuleElts.oncoeffs(op,b,m::ModuleElt)` does `v->op(b,v)` on the values of `m`.
+`ModuleElts.oncoeffs(op,b,m::[H]ModuleElt)` does `v->op(b,v)` on the values of `m`.
 
-`ModuleElts.oncoeffs(op,m::ModuleElt)` does `v->op(v)` on the values of `m`.
+`ModuleElts.oncoeffs(op,m::[H]ModuleElt)` does `v->op(v)` on the values of `m`.
 """
 oncoeffs(::Function,::ModuleElt,::HModuleElt)=error("not implemented")
 oncoeffs(::Function,::HModuleElt,::ModuleElt)=error("not implemented")
