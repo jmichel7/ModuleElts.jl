@@ -178,6 +178,18 @@ module ModuleElts
 export HModuleElt, ModuleElt # data structure
 
 #------------- implementation with Dicts ----------------------
+"""
+`HModuleElt{K,V}`  has a similar interface  to `Dict{K,V}`, except that the
+constructor  deletes keys with  zero value. This  can be overriden with the
+keyword `check=false`.
+```julia-repl
+julia> a=HModuleElt(Dict(:yy=>0, :yx=>2, :xy=>3))
+3:xy+2:yx
+
+julia> a+HModuleElt([:z=>1.0])
+3.0:xy+2.0:yx+1.0:z
+```
+"""
 struct HModuleElt{K,V} <: AbstractDict{K,V}
   d::Dict{K,V} # the keys K should be hashable
   function HModuleElt(d::Dict{K,V};check::Bool=true)where {K,V}
@@ -421,20 +433,21 @@ Base.:-(a::$M,b::$M)=merge2(-,a,b) # faster than a+(-b)
 Base.min(m::$M,n::$M)=merge2(min,m,n)
 Base.max(m::$M,n::$M)=merge2(max,m,n)
 
-# we assume that converting the keys from K to K1 does not change hashing
-# for the Dict implementation or sorting for the pairs implementation
 function Base.convert(::Type{$M{K,V}},a::$M{K1,V1}) where {K,K1,V,V1}
   if K==K1
     if V==V1 a
     elseif iszero(a) zero($M{K,V})
-    else $M(k=>convert(V,v) for (k,v) in a.d;check=false)
+    else 
+      $M(filter!(!iszero∘last,[k=>convert(V,v) for (k,v) in a.d]);check=false)
     end
   else 
+# converting the keys from K to K1 may change hashing
+# for the Dict implementation or sorting for the pairs implementation
     if iszero(a) zero($M{K,V})
     elseif V==V1
-      $M(convert(K,k)=>v for (k,v) in a.d;check=false)
+      $M(convert(K,k)=>v for (k,v) in a.d)
     else
-      $M(convert(K,k)=>convert(V,v) for (k,v) in a.d;check=false)
+      $M(convert(K,k)=>convert(V,v) for (k,v) in a.d)
     end
   end
 end
@@ -517,20 +530,17 @@ end
 # if iszero(m) needs that zero(V) is defined
 function oncoeffs(f::Function,m::$M{K,V},b)where {K,V}
   if iszero(m) return zero($M{K,typeof(f(zero(V),b))}) end
-  p=(k=>f(v,b) for (k,v) in m)
-  $M(p;check=any(iszero∘last,p))
+  $M(filter!(!iszero∘last,[k=>f(v,b) for (k,v) in m]);check=false)
 end
 
 # if iszero(m) needs that zero(V) is defined
 function oncoeffs(f::Function,b,m::$M{K,V})where {K,V}
   if iszero(m) return zero($M{K,typeof(f(b,zero(V)))}) end
-  p=(k=>f(b,v) for (k,v) in m)
-  $M(p;check=any(iszero∘last,p))
+  $M(filter!(!iszero∘last,[k=>f(b,v) for (k,v) in m]);check=false)
 end
 
 function oncoeffs(f::Function,m::$M)
-  p=(k=>f(v) for (k,v) in m)
-  $M(p;check=any(iszero∘last,p))
+  $M(filter!(!iszero∘last,[k=>f(v) for (k,v) in m]);check=false)
 end
 
 Base.conj(m::$M)=oncoeffs(conj,m)
@@ -549,12 +559,12 @@ using LinearAlgebra: LinearAlgebra, exactdiv
 LinearAlgebra.exactdiv(m::$M,b)=oncoeffs(exactdiv,m,b)
 
 # next 8 methods to resolve ambiguities
-Base.:*(::$M,::$M)=error("ambiguous")
-oncoeffs(::Function,::$M,::$M)=error("ambiguous")
+Base.:*(::$M,::$M)=error("not implemented")
+oncoeffs(::Function,::$M,::$M)=error("not implemented")
 end
 end
-Base.mergewith(::Function,::ModuleElt,::HModuleElt)=error("ambiguous")
-Base.mergewith(::Function,::HModuleElt,::ModuleElt)=error("ambiguous")
+Base.mergewith(::Function,::ModuleElt,::HModuleElt)=error("not implemented")
+Base.mergewith(::Function,::HModuleElt,::ModuleElt)=error("not implemented")
 """
 `ModuleElts.oncoeffs(op,m::ModuleElt,b)` does `v->op(v,b)` on the values of `m`.
 
@@ -562,9 +572,9 @@ Base.mergewith(::Function,::HModuleElt,::ModuleElt)=error("ambiguous")
 
 `ModuleElts.oncoeffs(op,m::ModuleElt)` does `v->op(v)` on the values of `m`.
 """
-oncoeffs(::Function,::ModuleElt,::HModuleElt)=error("ambiguous")
-oncoeffs(::Function,::HModuleElt,::ModuleElt)=error("ambiguous")
+oncoeffs(::Function,::ModuleElt,::HModuleElt)=error("not implemented")
+oncoeffs(::Function,::HModuleElt,::ModuleElt)=error("not implemented")
 
-Base.:*(::ModuleElt,::HModuleElt)=error("ambiguous")
-Base.:*(::HModuleElt,::ModuleElt)=error("ambiguous")
+Base.:*(::ModuleElt,::HModuleElt)=error("not implemented")
+Base.:*(::HModuleElt,::ModuleElt)=error("not implemented")
 end

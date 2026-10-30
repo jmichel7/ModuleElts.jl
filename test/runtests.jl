@@ -4,11 +4,11 @@ function mytest(file::String,cmd::String,man::String)
   println(file," ",cmd)
   exec=repr(MIME("text/plain"),eval(Meta.parse(cmd)),context=:limit=>true)
   if endswith(cmd,";") return true end
-  exec=replace(exec,r"\s*$"m=>""); exec=replace(exec,r"\s*$"s=>"")
-  exec=replace(exec,r"^\s*"=>"")
+  exec=replace(exec,r"\s*$"m=>"",r"\s*$"s=>"",r"^\s*"=>"")
   if exec==man return true end
   inds=collect(eachindex(exec))
-  i=inds[findfirst(i->i<=lastindex(man) && exec[i]!=man[i],inds)]
+  i=findfirst(i->i<=lastindex(man) && exec[i]!=man[i],inds)
+  if i==nothing i=ncodeunits(man)+1 else i=inds[i] end
   print("exec=$(repr(exec[i:end]))\nmanl=$(repr(man[i:end]))\n")
   false
 end
@@ -34,5 +34,7 @@ end
 @test mytest("ModuleElts.jl","a=ModuleElt(:yy=>1, :yx=>2, :xy=>3, :yy=>-1;check=false)",":yy+2:yx+3:xy-:yy")
 @test mytest("ModuleElts.jl","a=ModuleElt(:yy=>1, :yx=>2, :xy=>3, :yy=>-1)","3:xy+2:yx")
 @test mytest("ModuleElts.jl","a+ModuleElt([:z=>1.0])","3.0:xy+2.0:yx+1.0:z")
+@test mytest("ModuleElts.jl","a=HModuleElt(Dict(:yy=>0, :yx=>2, :xy=>3))","3:xy+2:yx")
+@test mytest("ModuleElts.jl","a+HModuleElt([:z=>1.0])","3.0:xy+2.0:yx+1.0:z")
 end
 include("properties.jl")

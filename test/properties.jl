@@ -208,6 +208,10 @@ end
         # converting the key type sorts them for ModuleElt; contents must match
         ki=M(1=>1,2=>2)
         @test asdict(convert(M{Float64,Int},ki))==Dict(1.0=>1,2.0=>2)
+        # a coefficient can be rounded to zero
+        @test iszero(convert(ModuleElt{Symbol,Float32},ModuleElt(:a=>1e-50)))
+        # convert may renormalise, avoiding a key collision
+        @test length(convert(ModuleElt{Float64,Int},ModuleElt(2^53=>1,2^53+1=>2)))==1
       end
 
       @testset "equality, hash, sets and dict keys" begin
@@ -250,9 +254,5 @@ end
     # coefficient type still cannot take a sum
     @test_broken ModuleElt(:a=>true)+ModuleElt(:a=>true)==ModuleElt(:a=>2)
     @test_broken HModuleElt(:a=>true)+HModuleElt(:a=>true)==HModuleElt(:a=>2)
-    # convert does not renormalise, so a key collision can survive
-    @test_broken length(convert(ModuleElt{Float64,Int},ModuleElt(2^53=>1,2^53+1=>2)))==1
-    # ... and a coefficient can be rounded to zero
-    @test_broken iszero(convert(ModuleElt{Symbol,Float32},ModuleElt(:a=>1e-50)))
   end
 end
